@@ -1,0 +1,57 @@
+version: '3.9'
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: ./deploy/Dockerfile
+    image: store_core:${STORE_CORE_VERSION:-latest}
+    restart: always
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      STORE_CORE_HOST: 0.0.0.0
+      STORE_CORE_DB_HOST: store_core-db
+      STORE_CORE_DB_PORT: 5432
+      STORE_CORE_DB_USER: store_core
+      STORE_CORE_DB_PASS: store_core
+      STORE_CORE_DB_BASE: store_core
+
+  db:
+    image: postgres:13.8-bullseye
+    hostname: store_core-db
+    environment:
+      POSTGRES_PASSWORD: "store_core"
+      POSTGRES_USER: "store_core"
+      POSTGRES_DB: "store_core"
+    volumes:
+      - store_core-db-data:/var/lib/postgresql/data
+    restart: always
+    healthcheck:
+      test: pg_isready -U store_core
+      interval: 2s
+      timeout: 3s
+      retries: 40
+
+  migrator:
+    image: store_core:${STORE_CORE_VERSION:-latest}
+    restart: "no"
+    command: alembic upgrade head
+    environment:
+      STORE_CORE_DB_HOST: store_core-db
+      STORE_CORE_DB_PORT: 5432
+      STORE_CORE_DB_USER: store_core
+      STORE_CORE_DB_PASS: store_core
+      STORE_CORE_DB_BASE: store_core
+    depends_on:
+      db:
+        condition: service_healthy
+
+
+
+volumes:
+  store_core-db-data:
+    name: store_core-db-data
