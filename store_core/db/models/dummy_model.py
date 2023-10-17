@@ -11,3 +11,5 @@ class DummyModel(Base):
 
     id = Column(Integer(), primary_key=True, autoincrement=True)
     name = Column(String(length=200))  # noqa: WPS432
+
+    __table_args__ = ({"schema": "shared"},)

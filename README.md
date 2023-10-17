@@ -35,6 +35,12 @@ Like this:
 docker-compose -f deploy/docker-compose.yml -f deploy/docker-compose.dev.yml --project-directory . up
 ```
 
+To access the database:
+
+```bash
+docker exec -it <container_id> psql -U store_core store_core
+```
+
 This command exposes the web application on port 8000, mounts current directory and enables autoreload.
 
 But you have to rebuild image every time you modify `poetry.lock` or `pyproject.toml` with this command:
@@ -69,16 +75,17 @@ store_core
 This application can be configured with environment variables.
 
 You can create `.env` file in the root directory and place all
-environment variables here. 
+environment variables here.
 
-All environment variabels should start with "STORE_CORE_" prefix.
+All environment variabels should start with "STORE*CORE*" prefix.
 
 For example if you see in your "store_core/settings.py" a variable named like
-`random_parameter`, you should provide the "STORE_CORE_RANDOM_PARAMETER" 
+`random_parameter`, you should provide the "STORE_CORE_RANDOM_PARAMETER"
 variable to configure the value. This behaviour can be changed by overriding `env_prefix` property
 in `store_core.settings.Settings.Config`.
 
 An exmaple of .env file:
+
 ```bash
 STORE_CORE_RELOAD="True"
 STORE_CORE_PORT="8000"
@@ -86,9 +93,10 @@ STORE_CORE_ENVIRONMENT="dev"
 ```
 
 You can read more about BaseSettings class here: https://pydantic-docs.helpmanual.io/usage/settings/
-## Opentelemetry 
 
-If you want to start your project with opentelemetry collector 
+## Opentelemetry
+
+If you want to start your project with opentelemetry collector
 you can add `-f ./deploy/docker-compose.otlp.yml` to your docker command.
 
 Like this:
@@ -97,11 +105,11 @@ Like this:
 docker-compose -f deploy/docker-compose.yml -f deploy/docker-compose.otlp.yml --project-directory . up
 ```
 
-This command will start opentelemetry collector and jaeger. 
+This command will start opentelemetry collector and jaeger.
 After sending a requests you can see traces in jaeger's UI
 at http://localhost:16686/.
 
-This docker configuration is not supposed to be used in production. 
+This docker configuration is not supposed to be used in production.
 It's only for demo purpose.
 
 You can read more about opentelemetry here: https://opentelemetry.io/
@@ -109,6 +117,7 @@ You can read more about opentelemetry here: https://opentelemetry.io/
 ## Pre-commit
 
 To install pre-commit simply run inside the shell:
+
 ```bash
 pre-commit install
 ```
@@ -117,18 +126,19 @@ pre-commit is very useful to check your code before publishing it.
 It's configured using .pre-commit-config.yaml file.
 
 By default it runs:
-* black (formats your code);
-* mypy (validates types);
-* isort (sorts imports in all files);
-* flake8 (spots possibe bugs);
-* yesqa (removes useless `# noqa` comments).
 
+-   black (formats your code);
+-   mypy (validates types);
+-   isort (sorts imports in all files);
+-   flake8 (spots possibe bugs);
+-   yesqa (removes useless `# noqa` comments).
 
 You can read more about pre-commit here: https://pre-commit.com/
 
 ## Migrations
 
 If you want to migrate your database, you should run following commands:
+
 ```bash
 # To run all migrations untill the migration with revision_id.
 alembic upgrade "<revision_id>"
@@ -140,6 +150,7 @@ alembic upgrade "head"
 ### Reverting migrations
 
 If you want to revert migrations, you should run:
+
 ```bash
 # revert all migrations up to: revision_id.
 alembic downgrade <revision_id>
@@ -151,6 +162,7 @@ alembic downgrade <revision_id>
 ### Migration generation
 
 To generate migrations you should run:
+
 ```bash
 # For automatic change detection.
 alembic revision --autogenerate
@@ -158,7 +170,6 @@ alembic revision --autogenerate
 # For empty file generation.
 alembic revision
 ```
-
 
 ## Running tests
 
@@ -170,15 +181,17 @@ docker-compose -f deploy/docker-compose.yml --project-directory . down
 ```
 
 For running tests on your local machine.
+
 1. you need to start a database.
 
 I prefer doing it with docker:
+
 ```
 docker run -p "5432:5432" -e "POSTGRES_PASSWORD=store_core" -e "POSTGRES_USER=store_core" -e "POSTGRES_DB=store_core" postgres:13.8-bullseye
 ```
 
-
 2. Run the pytest.
+
 ```bash
 pytest -vv .
 ```

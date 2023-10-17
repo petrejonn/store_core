@@ -9,6 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 ${imports if imports else ""}
 
+from store_core.db.migrations.tenant import for_each_tenant_schema
+
 # revision identifiers, used by Alembic.
 revision = ${repr(up_revision)}
 down_revision = ${repr(down_revision)}
@@ -16,9 +18,16 @@ branch_labels = ${repr(branch_labels)}
 depends_on = ${repr(depends_on)}
 
 
-def upgrade() -> None:
+@for_each_tenant_schema
+def upgrade(schema: str) -> None:
+    preparer = sa.sql.compiler.IdentifierPreparer(op.get_bind().dialect)
+    schema_quoted = preparer.format_schema(schema)
+
     ${upgrades if upgrades else "pass"}
 
-
-def downgrade() -> None:
+@for_each_tenant_schema
+def downgrade(schema: str) -> None:
+    preparer = sa.sql.compiler.IdentifierPreparer(op.get_bind().dialect)
+    schema_quoted = preparer.format_schema(schema)
+    
     ${downgrades if downgrades else "pass"}

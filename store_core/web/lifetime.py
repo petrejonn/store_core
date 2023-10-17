@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI
 
 from store_core.settings import settings
+from store_core.db.meta import meta
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import (
     OTLPSpanExporter,
 )
@@ -27,29 +28,43 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from sqlalchemy.orm import sessionmaker
+from alembic.runtime.migration import MigrationContext
+from alembic.config import Config as alembic_config
+from alembic import command
+import sqlalchemy as sa
 
+def get_shared_metadata():
+    shared_meta = sa.MetaData()
+    for table in meta.tables.values():
+        if table.schema != "store":
+            table.tometadata(shared_meta)
+    return shared_meta
 
-def _setup_db(app: FastAPI) -> None:  # pragma: no cover
-    """
-    Creates connection to the database.
-
-    This function creates SQLAlchemy engine instance,
-    session_factory for creating sessions
-    and stores them in the application's state property.
-
-    :param app: fastAPI application.
-    """
+async def _setup_db(app: FastAPI) -> None:
     engine = create_async_engine(str(settings.db_url), echo=settings.db_echo)
     session_factory = async_scoped_session(
-        sessionmaker(
-            engine,
-            expire_on_commit=False,
-            class_=AsyncSession,
-        ),
+        sessionmaker(engine, expire_on_commit=False, class_=AsyncSession),
         scopefunc=current_task,
     )
     app.state.db_engine = engine
     app.state.db_session_factory = session_factory
+
+    async with engine.begin() as conn:
+        def do_sync(sync_conn):
+            context = MigrationContext.configure(sync_conn)
+            if context.get_current_revision() is not None:
+                print("Database already exists.")
+                return
+            sa.schema.CreateSchema("shared").execute(sync_conn)
+            get_shared_metadata().create_all(bind=sync_conn)
+            alembic_config.attributes["connection"] = sync_conn
+            command.stamp(alembic_config, "head", purge=True)
+
+        await conn.run_sync(do_sync)
+
+
+
+
 def setup_opentelemetry(app: FastAPI) -> None:  # pragma: no cover
     """
     Enables opentelemetry instrumentation.
@@ -130,7 +145,7 @@ def register_startup_event(app: FastAPI) -> Callable[[], Awaitable[None]]:  # pr
 
     @app.on_event("startup")
     async def _startup() -> None:  # noqa: WPS430
-        _setup_db(app)
+        await _setup_db(app)
         setup_opentelemetry(app)
         pass  # noqa: WPS420
 

@@ -1,9 +1,12 @@
 import os
+
+import sqlalchemy as sa
 from sqlalchemy import text
 from sqlalchemy.engine import URL, make_url
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, AsyncEngine
 from sqlalchemy.orm import sessionmaker
 from store_core.settings import settings
+from store_core.db.meta import meta
 
 async def create_database() -> None:
     """Create a databse."""
@@ -41,3 +44,10 @@ async def drop_database() -> None:
         )
         await conn.execute(text(disc_users))
         await conn.execute(text(f'DROP DATABASE "{settings.db_base}"'))
+
+def get_store_specific_metadata():
+    store_meta = sa.MetaData(schema="store")
+    for table in meta.tables.values():
+        if table.schema == "store":
+            table.tometadata(store_meta)
+    return store_meta

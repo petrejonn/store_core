@@ -2,21 +2,18 @@ import strawberry
 from strawberry.fastapi import GraphQLRouter
 
 from store_core.web.gql.context import get_context
-from store_core.web.gql import echo
-from store_core.web.gql import dummy
+from store_core.web.gql import product
 
 @strawberry.type
 class Query(  # noqa: WPS215
-    echo.Query,
-    dummy.Query,
+    product.Query,
 ):
     """Main query."""
 
 
 @strawberry.type
 class Mutation(  # noqa: WPS215
-    echo.Mutation,
-    dummy.Mutation,
+    product.Mutation,
 ):
     """Main mutation."""
 

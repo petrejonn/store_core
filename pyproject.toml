@@ -29,6 +29,7 @@ opentelemetry-instrumentation = "^0.36b0"
 opentelemetry-instrumentation-fastapi = "^0.36b0"
 opentelemetry-instrumentation-logging = "^0.36b0"
 opentelemetry-instrumentation-sqlalchemy = "^0.36b0"
+typeguard = "^4.1.5"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.3"

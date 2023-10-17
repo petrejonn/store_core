@@ -6,6 +6,7 @@ Create Date: 2021-08-16 16:53:05.484024
 
 """
 
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "819cbf6e030b"
@@ -15,8 +16,8 @@ depends_on = None
 
 
 def upgrade() -> None:
-    pass
+    op.execute("CREATE SCHEMA IF NOT EXISTS shared")
 
 
 def downgrade() -> None:
-    pass
+    op.execute("DROP SCHEMA shared")

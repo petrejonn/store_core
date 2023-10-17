@@ -1,6 +1,7 @@
 import asyncio
 from logging.config import fileConfig
 
+import sqlalchemy as sa
 from alembic import context
 from sqlalchemy.ext.asyncio.engine import create_async_engine
 from sqlalchemy.future import Connection
@@ -55,13 +56,38 @@ async def run_migrations_offline() -> None:
         context.run_migrations()
 
 
+def include_name(name, type_, parent_names):
+    if type_ == "schema":
+        # this **will* include the default schema
+        return name in [None, "shared", "store_default", "store"]
+    else:
+        return True
+    
+
 def do_run_migrations(connection: Connection) -> None:
     """
     Run actual sync migrations.
 
     :param connection: connection to the database.
     """
-    context.configure(connection=connection, target_metadata=target_metadata)
+    # Create a new MetaData object
+    translated = sa.MetaData()
+
+    # Define a function to translate the schema
+    def translate_schema(table):
+        # If the original schema is 'shop', change it to 'shop_default'
+        if table.schema == 'store':
+            return 'store_default'
+        # Otherwise, keep the original schema
+        return table.schema
+
+    # Copy all tables from target_metadata to translated, changing the schema if necessary
+    for table in target_metadata.tables.values():
+        table.tometadata(translated, schema=translate_schema(table))
+
+    context.configure(connection=connection, target_metadata=translated, compare_type=True,
+            transaction_per_migration=True,
+            include_schemas=True,include_name = include_name,)
 
     with context.begin_transaction():
         context.run_migrations()
